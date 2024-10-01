@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Puzzle } from '../lib/puzzles';
+// PuzzleGrid.tsx
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { Puzzle, Cell } from '../lib/puzzles';
 import { calculateHints } from '../lib/utils';
 
 interface PuzzleGridProps {
@@ -7,9 +9,13 @@ interface PuzzleGridProps {
 }
 
 const PuzzleGrid: React.FC<PuzzleGridProps> = ({ puzzle }) => {
-  const { rows, columns } = calculateHints(puzzle.data);
+  // calculateHintsに渡すデータをnumber[][]に変換
+  const { rows, columns } = calculateHints(puzzle.data.map((row) => row.map((cell) => cell.value)));
+
+  // gridState: 各セルの状態 (0: 未操作, 1: 塗りつぶし, 2: ×印)
   const [gridState, setGridState] = useState<number[][]>(Array.from({ length: puzzle.size }, () => Array(puzzle.size).fill(0)));
 
+  // 正解判定とメッセージ表示
   const [isSolved, setIsSolved] = useState(false);
 
   // ライフとゲームオーバー状態
@@ -19,182 +25,23 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({ puzzle }) => {
   // ドラッグ操作用の状態変数
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartPos, setDragStartPos] = useState<{ rowIndex: number; colIndex: number } | null>(null);
+  const [dragButton, setDragButton] = useState<number | null>(null);
   const [dragPreview, setDragPreview] = useState<Array<{ rowIndex: number; colIndex: number }>>([]);
   const [selectedCellCount, setSelectedCellCount] = useState(0);
-  const [mistakeMade, setMistakeMade] = useState(false);
 
   // 操作モードの状態
   const [currentMode, setCurrentMode] = useState<'fill' | 'mark'>('fill');
 
-  // 左クリック時の処理
-  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>, rowIndex: number, colIndex: number) => {
-    event.preventDefault();
-    if (isGameOver) return;
-
-    const cellValue = gridState[rowIndex][colIndex];
-    if (cellValue !== 0) return;
-
-    if (event.button === 0) {
-      // 左クリック
-      const correctValue = puzzle.data[rowIndex][colIndex];
-      if (currentMode === 'fill') {
-        // 塗りつぶしモード
-        if (correctValue === 1) {
-          // 正解マスの場合
-          setGridState((prevState) => {
-            const newState = prevState.map((row) => row.slice());
-            newState[rowIndex][colIndex] = 1;
-            return newState;
-          });
-          // ドラッグ操作を開始
-          setIsDragging(true);
-          setDragStartPos({ rowIndex, colIndex });
-          setDragPreview([{ rowIndex, colIndex }]);
-          setSelectedCellCount(1);
-        } else {
-          // 不正解マスの場合
-          setGridState((prevState) => {
-            const newState = prevState.map((row) => row.slice());
-            newState[rowIndex][colIndex] = 2; // ×印を付ける
-            return newState;
-          });
-          setLives((prevLives) => prevLives - 1);
-          setMistakeMade(true);
-        }
-      } else if (currentMode === 'mark') {
-        // ×印モード
-        if (correctValue === 0) {
-          // 正解が空白マスの場合
-          setGridState((prevState) => {
-            const newState = prevState.map((row) => row.slice());
-            newState[rowIndex][colIndex] = 2; // ×印を付ける
-            return newState;
-          });
-        } else {
-          // 正解が塗りつぶしマスの場合
-          setGridState((prevState) => {
-            const newState = prevState.map((row) => row.slice());
-            newState[rowIndex][colIndex] = 1; // 塗りつぶす
-            return newState;
-          });
-          setLives((prevLives) => prevLives - 1);
-        }
-      }
+  // マウスアップ時の処理をuseCallbackでメモ化
+  const handleMouseUp = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      setDragStartPos(null);
+      setDragButton(null);
+      setDragPreview([]);
+      setSelectedCellCount(0);
     }
-  };
-
-  // 右クリック時の処理
-  const handleCellRightClick = (event: React.MouseEvent<HTMLDivElement>, rowIndex: number, colIndex: number) => {
-    event.preventDefault();
-    if (isGameOver) return;
-
-    const cellValue = gridState[rowIndex][colIndex];
-    if (cellValue !== 0) return;
-
-    const correctValue = puzzle.data[rowIndex][colIndex];
-
-    if (currentMode === 'fill') {
-      // 塗りつぶしモード
-      if (correctValue === 0) {
-        // 正解が空白マスの場合
-        setGridState((prevState) => {
-          const newState = prevState.map((row) => row.slice());
-          newState[rowIndex][colIndex] = 2; // ×印を付ける
-          return newState;
-        });
-      } else {
-        // 正解が塗りつぶしマスの場合
-        setGridState((prevState) => {
-          const newState = prevState.map((row) => row.slice());
-          newState[rowIndex][colIndex] = 1; // 塗りつぶす
-          return newState;
-        });
-        setLives((prevLives) => prevLives - 1);
-      }
-    } else if (currentMode === 'mark') {
-      // ×印モードでは、左クリックと同じ動作をする
-      if (correctValue === 0) {
-        // 正解が空白マスの場合
-        setGridState((prevState) => {
-          const newState = prevState.map((row) => row.slice());
-          newState[rowIndex][colIndex] = 2; // ×印を付ける
-          return newState;
-        });
-      } else {
-        // 正解が塗りつぶしマスの場合
-        setGridState((prevState) => {
-          const newState = prevState.map((row) => row.slice());
-          newState[rowIndex][colIndex] = 1; // 塗りつぶす
-          return newState;
-        });
-        setLives((prevLives) => prevLives - 1);
-      }
-    }
-  };
-
-  // マウス移動時の処理（ドラッグ操作）
-  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>, rowIndex: number, colIndex: number) => {
-    if (isDragging && dragStartPos) {
-      event.preventDefault();
-
-      let newPreview = [];
-      if (rowIndex === dragStartPos.rowIndex) {
-        const startCol = Math.min(dragStartPos.colIndex, colIndex);
-        const endCol = Math.max(dragStartPos.colIndex, colIndex);
-        for (let c = startCol; c <= endCol; c++) {
-          newPreview.push({ rowIndex, colIndex: c });
-        }
-      } else if (colIndex === dragStartPos.colIndex) {
-        const startRow = Math.min(dragStartPos.rowIndex, rowIndex);
-        const endRow = Math.max(dragStartPos.rowIndex, rowIndex);
-        for (let r = startRow; r <= endRow; r++) {
-          newPreview.push({ rowIndex: r, colIndex });
-        }
-      } else {
-        newPreview = [{ rowIndex: dragStartPos.rowIndex, colIndex: dragStartPos.colIndex }];
-      }
-      setDragPreview(newPreview);
-      setSelectedCellCount(newPreview.length);
-    }
-  };
-
-  // マウスアップ時の処理
-  const handleMouseUp = () => {
-    if (isDragging && dragPreview.length > 0 && !mistakeMade) {
-      setGridState((prevState) => {
-        const newState = prevState.map((row) => row.slice());
-        let livesLost = 0;
-
-        dragPreview.forEach((pos) => {
-          const { rowIndex, colIndex } = pos;
-          const cellValue = prevState[rowIndex][colIndex];
-          if (cellValue !== 0) return;
-
-          const correctValue = puzzle.data[rowIndex][colIndex];
-
-          if (correctValue === 1) {
-            // 正解の場合
-            newState[rowIndex][colIndex] = 1;
-          } else {
-            // 不正解の場合
-            newState[rowIndex][colIndex] = 2; // ×印を付ける
-            livesLost += 1;
-          }
-        });
-
-        if (livesLost > 0) {
-          setLives((prevLives) => prevLives - livesLost);
-        }
-
-        return newState;
-      });
-    }
-    setIsDragging(false);
-    setDragStartPos(null);
-    setDragPreview([]);
-    setSelectedCellCount(0);
-    setMistakeMade(false);
-  };
+  }, [isDragging]);
 
   // マウスアップイベントのリスナーを設定
   useEffect(() => {
@@ -209,7 +56,7 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({ puzzle }) => {
     return () => {
       document.removeEventListener('mouseup', handleDocumentMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseUp]);
 
   // ライフが0になったらゲームオーバー
   useEffect(() => {
@@ -224,7 +71,7 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({ puzzle }) => {
       for (let i = 0; i < puzzle.size; i++) {
         for (let j = 0; j < puzzle.size; j++) {
           const userCell = gridState[i][j] === 1 ? 1 : 0;
-          if (userCell !== puzzle.data[i][j]) {
+          if (userCell !== puzzle.data[i][j].value) {
             return false;
           }
         }
@@ -239,25 +86,236 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({ puzzle }) => {
     }
   }, [gridState, puzzle]);
 
+  // パズル変更時に状態をリセット
+  useEffect(() => {
+    console.log(`Selected Puzzle Size: ${puzzle.size}`);
+    console.log(`Selected Puzzle Data Rows: ${puzzle.data.length}`);
+    console.log(`Selected Puzzle Data Columns (First Row): ${puzzle.data[0]?.length}`);
+
+    // gridStateの正確な設定を確認
+    const newGridState = Array.from({ length: puzzle.size }, () => Array(puzzle.size).fill(0));
+    console.log('Setting new gridState:', newGridState);
+    setGridState(newGridState);
+
+    // その他の状態をリセット
+    setIsSolved(false);
+    setLives(3);
+    setIsGameOver(false);
+    setIsDragging(false);
+    setDragStartPos(null);
+    setDragButton(null);
+    setDragPreview([]);
+    setSelectedCellCount(0);
+  }, [puzzle]);
+
+  // 左クリックおよび右クリック時の処理
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>, rowIndex: number, colIndex: number) => {
+    event.preventDefault();
+    if (isGameOver) return;
+
+    const cellValue = gridState[rowIndex][colIndex];
+    if (cellValue !== 0) return; // 既に操作済みの場合は何もしない
+
+    const puzzleCell: Cell | undefined = puzzle.data[rowIndex]?.[colIndex];
+    if (!puzzleCell) {
+      console.error(`Invalid cell at row ${rowIndex}, column ${colIndex}`);
+      return;
+    }
+
+    const correctValue = puzzleCell.value;
+
+    if (currentMode === 'fill') {
+      if (event.button === 0) {
+        // 左クリック（塗りつぶし）
+        if (correctValue === 1) {
+          // 正解マスの場合
+          setGridState((prevState) => {
+            const newState = prevState.map((row) => row.slice());
+            newState[rowIndex][colIndex] = 1;
+            return newState;
+          });
+          // ドラッグ操作を開始
+          setIsDragging(true);
+          setDragStartPos({ rowIndex, colIndex });
+          setDragButton(0); // 左クリック
+          setDragPreview([{ rowIndex, colIndex }]);
+          setSelectedCellCount(1);
+        } else {
+          // 不正解マスの場合
+          setGridState((prevState) => {
+            const newState = prevState.map((row) => row.slice());
+            newState[rowIndex][colIndex] = 2; // ×印を付ける
+            return newState;
+          });
+          setLives((prevLives) => prevLives - 1);
+          // プレビューは不要
+        }
+      } else if (event.button === 2) {
+        // 右クリック（×印を付ける）
+        if (correctValue === 0) {
+          // 正解が空白マスの場合
+          setGridState((prevState) => {
+            const newState = prevState.map((row) => row.slice());
+            newState[rowIndex][colIndex] = 2; // ×印を付ける
+            return newState;
+          });
+          // ドラッグ操作を開始
+          setIsDragging(true);
+          setDragStartPos({ rowIndex, colIndex });
+          setDragButton(2); // 右クリック
+          setDragPreview([{ rowIndex, colIndex }]);
+          setSelectedCellCount(1);
+        } else {
+          // 正解が塗りつぶしマスの場合
+          setGridState((prevState) => {
+            const newState = prevState.map((row) => row.slice());
+            newState[rowIndex][colIndex] = 1; // 塗りつぶす
+            return newState;
+          });
+          setLives((prevLives) => prevLives - 1);
+          // プレビューは不要
+        }
+      }
+    } else if (currentMode === 'mark') {
+      // ×印モード（左右クリック共通）
+      if (correctValue === 0) {
+        // 正解が空白マスの場合
+        setGridState((prevState) => {
+          const newState = prevState.map((row) => row.slice());
+          newState[rowIndex][colIndex] = 2; // ×印を付ける
+          return newState;
+        });
+        // ドラッグ操作を開始
+        setIsDragging(true);
+        setDragStartPos({ rowIndex, colIndex });
+        setDragButton(event.button); // 左右どちらのクリックかを記録
+        setDragPreview([{ rowIndex, colIndex }]);
+        setSelectedCellCount(1);
+      } else {
+        // 正解が塗りつぶしマスの場合
+        setGridState((prevState) => {
+          const newState = prevState.map((row) => row.slice());
+          newState[rowIndex][colIndex] = 1; // 塗りつぶす
+          return newState;
+        });
+        setLives((prevLives) => prevLives - 1);
+        // プレビューは不要
+      }
+    }
+  };
+
+  // 右クリック時の処理
+  const handleCellRightClick = (event: React.MouseEvent<HTMLDivElement>, rowIndex: number, colIndex: number) => {
+    handleMouseDown(event, rowIndex, colIndex); // 右クリックもhandleMouseDownで処理
+  };
+
+  // マウス移動時の処理（ドラッグ操作）
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>, rowIndex: number, colIndex: number) => {
+    if (isDragging && dragStartPos && dragButton !== null) {
+      event.preventDefault();
+
+      const cellValue = gridState[rowIndex][colIndex];
+      if (cellValue !== 0) return; // 既に操作済みの場合は何もしない
+
+      const puzzleCell: Cell | undefined = puzzle.data[rowIndex]?.[colIndex];
+      if (!puzzleCell) {
+        console.error(`Invalid cell at row ${rowIndex}, column ${colIndex}`);
+        return;
+      }
+
+      const correctValue = puzzleCell.value;
+
+      // 塗りつぶしモードで左クリックまたは右クリック
+      if (currentMode === 'fill') {
+        if (dragButton === 0) {
+          // 左クリックでドラッグ中（塗りつぶし）
+          if (correctValue === 1) {
+            // 正解マスの場合
+            setGridState((prevState) => {
+              const newState = prevState.map((row) => row.slice());
+              newState[rowIndex][colIndex] = 1;
+              return newState;
+            });
+            // プレビューを更新
+            setDragPreview((prev) => [...prev, { rowIndex, colIndex }]);
+            setSelectedCellCount((prev) => prev + 1);
+          } else {
+            // 不正解マスの場合
+            setGridState((prevState) => {
+              const newState = prevState.map((row) => row.slice());
+              newState[rowIndex][colIndex] = 2; // ×印を付ける
+              return newState;
+            });
+            setLives((prevLives) => prevLives - 1);
+            // プレビューは不要
+          }
+        } else if (dragButton === 2) {
+          // 右クリックでドラッグ中（×印を付ける）
+          if (correctValue === 0) {
+            // 正解が空白マスの場合
+            setGridState((prevState) => {
+              const newState = prevState.map((row) => row.slice());
+              newState[rowIndex][colIndex] = 2;
+              return newState;
+            });
+            // プレビューを更新
+            setDragPreview((prev) => [...prev, { rowIndex, colIndex }]);
+            setSelectedCellCount((prev) => prev + 1);
+          } else {
+            // 正解が塗りつぶしマスの場合
+            setGridState((prevState) => {
+              const newState = prevState.map((row) => row.slice());
+              newState[rowIndex][colIndex] = 1;
+              return newState;
+            });
+            setLives((prevLives) => prevLives - 1);
+            // プレビューは不要
+          }
+        }
+      } else if (currentMode === 'mark') {
+        // ×印モード（左右クリック共通）
+        if (correctValue === 0) {
+          // 正解が空白マスの場合
+          setGridState((prevState) => {
+            const newState = prevState.map((row) => row.slice());
+            newState[rowIndex][colIndex] = 2;
+            return newState;
+          });
+          // プレビューを更新
+          setDragPreview((prev) => [...prev, { rowIndex, colIndex }]);
+          setSelectedCellCount((prev) => prev + 1);
+        } else {
+          // 正解が塗りつぶしマスの場合
+          setGridState((prevState) => {
+            const newState = prevState.map((row) => row.slice());
+            newState[rowIndex][colIndex] = 1;
+            return newState;
+          });
+          setLives((prevLives) => prevLives - 1);
+          // プレビューは不要
+        }
+      }
+    }
+  };
+
   const handleReset = () => {
     setGridState(Array.from({ length: puzzle.size }, () => Array(puzzle.size).fill(0)));
     setIsSolved(false);
     setLives(3);
     setIsGameOver(false);
+    setIsDragging(false);
+    setDragStartPos(null);
+    setDragButton(null);
+    setDragPreview([]);
+    setSelectedCellCount(0);
   };
 
   useEffect(() => {
-    setGridState(Array.from({ length: puzzle.size }, () => Array(puzzle.size).fill(0)));
-    setIsSolved(false);
-    setLives(3);
-    setIsGameOver(false);
-  }, [puzzle]);
+    console.log('Current gridState:', gridState);
+  }, [gridState]);
 
   const maxHintHeight = Math.max(...columns.map((hints) => hints.length));
   const maxHintWidth = Math.max(...rows.map((hints) => hints.length));
-
-  // プレビュー中の最後のセルを取得
-  const lastPreviewCell = dragPreview.length > 0 ? dragPreview[dragPreview.length - 1] : null;
 
   return (
     <div className="flex flex-col items-center">
@@ -324,13 +382,38 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({ puzzle }) => {
         >
           {gridState.map((row, rowIndex) =>
             row.map((cell, colIndex) => {
+              const puzzleCell: Cell | undefined = puzzle.data[rowIndex]?.[colIndex];
+              if (!puzzleCell) {
+                console.error(`Invalid cell at row ${rowIndex}, column ${colIndex}`);
+                return (
+                  <div
+                    key={`${rowIndex}-${colIndex}`}
+                    className="relative cursor-pointer flex items-center justify-center bg-red-500"
+                    style={{
+                      width: '2rem',
+                      height: '2rem',
+                      borderTop: rowIndex === 0 ? '1px solid #000' : 'none',
+                      borderLeft: colIndex === 0 ? '1px solid #000' : 'none',
+                      borderRight: '1px solid #000',
+                      borderBottom: '1px solid #000',
+                    }}
+                  >
+                    <span className="text-white text-lg">!</span>
+                  </div>
+                );
+              }
+              const cellColor = puzzleCell.color;
+
               const isPreviewCell = dragPreview.some((pos) => pos.rowIndex === rowIndex && pos.colIndex === colIndex);
-              const isLastPreviewCell = lastPreviewCell && rowIndex === lastPreviewCell.rowIndex && colIndex === lastPreviewCell.colIndex;
+              const isLastPreviewCell =
+                dragPreview.length > 0 &&
+                rowIndex === dragPreview[dragPreview.length - 1].rowIndex &&
+                colIndex === dragPreview[dragPreview.length - 1].colIndex;
 
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
-                  className={`relative cursor-pointer flex items-center justify-center ${cell === 1 ? 'bg-black' : isPreviewCell ? 'bg-gray-300' : 'bg-white'}`}
+                  className={`relative cursor-pointer flex items-center justify-center`}
                   onMouseDown={(event) => handleMouseDown(event, rowIndex, colIndex)}
                   onMouseEnter={(event) => handleMouseMove(event, rowIndex, colIndex)}
                   onMouseUp={handleMouseUp}
@@ -342,10 +425,18 @@ const PuzzleGrid: React.FC<PuzzleGridProps> = ({ puzzle }) => {
                     borderLeft: colIndex === 0 ? '1px solid #000' : 'none',
                     borderRight: '1px solid #000',
                     borderBottom: '1px solid #000',
+                    backgroundColor:
+                      cell === 1
+                        ? cellColor
+                        : cell === 2
+                        ? '#FFFFFF' // ×印の際は白背景
+                        : isPreviewCell
+                        ? '#CCCCCC' // プレビュー中のセルは灰色
+                        : '#FFFFFF',
                   }}
                 >
                   {cell === 2 && <span className="text-gray-500 text-lg">×</span>}
-                  {isLastPreviewCell && !isGameOver && !mistakeMade && selectedCellCount > 1 && (
+                  {isLastPreviewCell && !isGameOver && (
                     <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm text-gray-700 bg-white px-1 rounded">{selectedCellCount}</div>
                   )}
                 </div>
