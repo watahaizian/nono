@@ -1,38 +1,34 @@
 import React, { useState } from 'react';
-import { puzzles, Puzzle } from './lib/puzzles';
-import PuzzleGrid from './components/PuzzleGird';
+import TitleScreen from './components/TitleScreen';
+import GameScreen from './components/GameScreen';
+import { fetchPuzzles } from './lib/api';
 
 const App: React.FC = () => {
-  const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle>(puzzles[0]);
+  const [currentScreen, setCurrentScreen] = useState('title');
+  const [puzzleId, setPuzzleId] = useState(0);
 
-  const handlePuzzleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedPuzzle = puzzles.find((puzzle) => puzzle.id === event.target.value);
-    if (selectedPuzzle) {
-      setCurrentPuzzle(selectedPuzzle);
+  const startGame = async () => {
+    try {
+      const puzzles = await fetchPuzzles();
+      const randomPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
+      setPuzzleId(randomPuzzle.id);
+      setCurrentScreen('game');
+    } catch (error) {
+      console.error(error);
+      alert('Failed to start the game');
     }
   };
 
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">ノノグラム</h1>
-      <select className="border p-2 mb-4" onChange={handlePuzzleChange} defaultValue="">
-        <option value="" disabled>
-          パズルを選択してください
-        </option>
-        {puzzles.map((puzzle) => (
-          <option key={puzzle.id} value={puzzle.id}>
-            {puzzle.name}
-          </option>
-        ))}
-      </select>
-      {currentPuzzle && (
-        <div>
-          <h2 className="text-xl font-semibold mb-2">{currentPuzzle.name}</h2>
-          <PuzzleGrid key={currentPuzzle.id} puzzle={currentPuzzle} />
-        </div>
-      )}
-    </div>
-  );
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'title':
+        return <TitleScreen onStart={startGame} />;
+      case 'game':
+        return <GameScreen puzzleId={puzzleId} />;
+    }
+  };
+
+  return <div>{renderScreen()}</div>;
 };
 
 export default App;
