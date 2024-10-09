@@ -6,12 +6,14 @@ import { fetchPuzzles } from './lib/api';
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState('title');
   const [puzzleId, setPuzzleId] = useState(0);
+  const [puzzleSize, setPuzzleSize] = useState(0);
 
   const startGame = async () => {
     try {
       const puzzles = await fetchPuzzles();
       const randomPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
       setPuzzleId(randomPuzzle.id);
+      setPuzzleSize(randomPuzzle.size);
       setCurrentScreen('game');
     } catch (error) {
       console.error(error);
@@ -24,7 +26,7 @@ const App: React.FC = () => {
       case 'title':
         return <TitleScreen onStart={startGame} />;
       case 'game':
-        return <GameScreen puzzleId={puzzleId} />;
+        return <GameScreen puzzleId={puzzleId} puzzleSize={puzzleSize} />;
     }
   };
 
