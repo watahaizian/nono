@@ -12,6 +12,10 @@ export interface GameScreenProps {
   puzzleSize: number;
 }
 
+export interface TitleScreenProps {
+  onStart: () => void;
+}
+
 export interface hints {
   rowHints: number[][];
   colHints: number[][];
