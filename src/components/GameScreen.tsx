@@ -1,22 +1,9 @@
 import { useState, useEffect } from 'react';
 import { fetchCells } from '../lib/api';
+import { calculateHints } from '../lib/utils';
+import { cellData, GameScreenProps, hints } from '../lib/interface';
 
-interface GameScreenProps {
-  puzzleId: number;
-  puzzleSize: number;
-}
-
-interface cellData {
-  id: number;
-  puzzle_id: number;
-  row: number;
-  col: number;
-  value: number;
-  color: string;
-}
-
-const getCellStyle = (row: number, col: number, cell?: cellData) => ({
-  backgroundColor: cell?.color || 'white',
+const getCellStyle = (row: number, col: number) => ({
   borderTop: row === 0 ? '1px solid gray' : 'none',
   borderLeft: col === 0 ? '1px solid gray' : 'none',
   borderRight: '1px solid gray',
@@ -25,19 +12,75 @@ const getCellStyle = (row: number, col: number, cell?: cellData) => ({
 
 const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
   const [cells, setCells] = useState<cellData[]>([]);
+  const [hints, setHints] = useState<hints | null>(null);
+  const [currentCell, setCurrentCell] = useState<string[][]>(
+    Array.from({ length: puzzleSize }, () => Array(puzzleSize).fill(null))
+  );
+  const [isCorrect, setIsCorrect] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchCellsData = async () => {
       try {
         const data: cellData[] = await fetchCells(puzzleId);
         setCells(data);
+        setHints(calculateHints(data, puzzleSize));
       } catch (error) {
         console.error(error);
         alert('Failed to fetch cells');
       }
     };
     fetchCellsData();
-  }, [puzzleId]);
+  }, [puzzleId, puzzleSize]);
+
+  useEffect(() => {
+    const answer = cells.every((cell) => {
+      const row = cell.row_index;
+      const col = cell.col_index;
+      if (cell.value === 1) {
+        return currentCell[row][col] === cell.color;
+      } else {
+        return (
+          currentCell[row][col] === null || currentCell[row][col] === 'wrong'
+        );
+      }
+    });
+    setIsCorrect(answer);
+  }, [currentCell, cells]);
+
+  if (!hints) {
+    return <div>Loading...</div>;
+  }
+
+  const cellLeftClick = (row: number, col: number) => {
+    const cell = cells.find((c) => c.row_index === row && c.col_index === col);
+    if (!cell) {
+      console.error('Cell not found');
+      return;
+    }
+    if (currentCell[row][col] !== null) return;
+    if (cell.value === 1) {
+      setCurrentCell((prev) => {
+        const newCell = prev.map((rowArr) => [...rowArr]); // 深いコピー
+        const cellData = cells.find(
+          (c) => c.row_index === row && c.col_index === col
+        );
+        if (cellData) {
+          newCell[row][col] = cellData.color;
+        }
+        return newCell;
+      });
+    } else {
+      setCurrentCell((prev) => {
+        const newCell = prev.map((rowArr) => [...rowArr]); // 深いコピー
+        newCell[row][col] = 'wrong';
+        return newCell;
+      });
+    }
+  };
+
+  // ヒントの最大数を取得
+  const maxRowHints = Math.max(...hints.rowHints.map((h) => h.length));
+  const maxColHints = Math.max(...hints.colHints.map((h) => h.length));
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
@@ -47,25 +90,82 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
       <div
         className="grid gap-0"
         style={{
-          gridTemplateColumns: `repeat(${puzzleSize}, 1fr)`,
-          gridTemplateRows: `repeat(${puzzleSize}, 1fr)`,
+          gridTemplateColumns: `repeat(${maxRowHints + puzzleSize}, 1fr)`,
+          gridTemplateRows: `repeat(${maxColHints + puzzleSize}, 1fr)`,
         }}
       >
-        {Array.from({ length: puzzleSize * puzzleSize }).map((_, index) => {
-          const row = Math.floor(index / puzzleSize);
-          const col = index % puzzleSize;
-          const cell = cells.find((c) => c.row === row && c.col === col);
-          return (
-            <div
-              key={index}
-              className="w-8 h-8 flex items-center justify-center"
-              style={getCellStyle(row, col, cell)}
-            >
-              {cell?.value ?? ''}
-            </div>
-          );
-        })}
+        {/* グリッドを構築 */}
+        {Array.from({ length: maxColHints + puzzleSize }).map((_, gridRow) =>
+          Array.from({ length: maxRowHints + puzzleSize }).map((_, gridCol) => {
+            const key = `${gridRow}-${gridCol}`;
+
+            // 左上の空白セル
+            if (gridRow < maxColHints && gridCol < maxRowHints) {
+              return <div key={key} className="w-8 h-8"></div>;
+            }
+
+            // 列ヒント（上部）
+            if (gridRow < maxColHints && gridCol >= maxRowHints) {
+              const colIndex = gridCol - maxRowHints;
+              const hintIndex =
+                hints.colHints[colIndex].length - (maxColHints - gridRow);
+              const hint = hints.colHints[colIndex][hintIndex] || '';
+              return (
+                <div
+                  key={key}
+                  className="w-8 h-8 flex items-center justify-center"
+                >
+                  {hint}
+                </div>
+              );
+            }
+
+            // 行ヒント（左側）
+            if (gridRow >= maxColHints && gridCol < maxRowHints) {
+              const rowIndex = gridRow - maxColHints;
+              const hintIndex =
+                hints.rowHints[rowIndex].length - (maxRowHints - gridCol);
+              const hint = hints.rowHints[rowIndex][hintIndex] || '';
+              return (
+                <div
+                  key={key}
+                  className="w-8 h-8 flex items-center justify-center"
+                >
+                  {hint}
+                </div>
+              );
+            }
+
+            // パズルのセル
+            if (gridRow >= maxColHints && gridCol >= maxRowHints) {
+              const rowIndex = gridRow - maxColHints;
+              const colIndex = gridCol - maxRowHints;
+              return (
+                <div
+                  key={key}
+                  className="w-8 h-8 flex items-center justify-center cursor-pointer"
+                  style={{
+                    ...getCellStyle(rowIndex, colIndex),
+                    backgroundColor:
+                      currentCell[rowIndex][colIndex] === null
+                        ? 'white'
+                        : currentCell[rowIndex][colIndex],
+                  }}
+                  onClick={() => cellLeftClick(rowIndex, colIndex)}
+                >
+                  {currentCell[rowIndex][colIndex] === 'wrong' ? 'x' : ''}
+                </div>
+              );
+            }
+
+            // その他の場合（念のため）
+            return <div key={key} className="w-8 h-8"></div>;
+          })
+        )}
       </div>
+      {isCorrect && (
+        <div className="text-2xl mt-4 text-green-500">ゲームクリア！</div>
+      )}
     </div>
   );
 };
