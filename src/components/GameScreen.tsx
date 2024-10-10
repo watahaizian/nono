@@ -16,7 +16,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
   const [currentCell, setCurrentCell] = useState<string[][]>(
     Array.from({ length: puzzleSize }, () => Array(puzzleSize).fill(null))
   );
-  const [isCorrect, setIsCorrect] = useState<boolean>(false);
+  const [playState, setPlayState] = useState<string>('playing');
+  const [life, setLife] = useState<number>(3);
 
   useEffect(() => {
     const fetchCellsData = async () => {
@@ -44,14 +45,21 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
         );
       }
     });
-    setIsCorrect(answer);
+    setPlayState(answer ? 'correct' : 'playing');
   }, [currentCell, cells]);
+
+  useEffect(() => {
+    if (life === 0) {
+      setPlayState('gameover');
+    }
+  }, [life]);
 
   if (!hints) {
     return <div>Loading...</div>;
   }
 
   const cellLeftClick = (row: number, col: number) => {
+    if (playState !== 'playing') return;
     const cell = cells.find((c) => c.row_index === row && c.col_index === col);
     if (!cell) {
       console.error('Cell not found');
@@ -75,6 +83,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
         newCell[row][col] = 'wrong';
         return newCell;
       });
+      setLife((prev) => prev - 1);
     }
   };
 
@@ -87,6 +96,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
       <h2 className="text-3xl font-bold mb-4">
         ゲームが始まりました！ パズルID: {puzzleId}, サイズ: {puzzleSize}
       </h2>
+      <div className="text-xl mb-4">残機: {life}</div>
       <div
         className="grid gap-0"
         style={{
@@ -163,8 +173,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
           })
         )}
       </div>
-      {isCorrect && (
+      {playState === 'correct' && (
         <div className="text-2xl mt-4 text-green-500">ゲームクリア！</div>
+      )}
+      {playState === 'gameover' && (
+        <div className="text-2xl mt-4 text-red-500">ゲームオーバー！</div>
       )}
     </div>
   );
