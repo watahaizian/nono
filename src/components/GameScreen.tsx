@@ -87,6 +87,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
     }
   };
 
+  const resetGame = () => {
+    setCurrentCell(
+      Array.from({ length: puzzleSize }, () => Array(puzzleSize).fill(null))
+    );
+    setLife(3);
+    setPlayState('playing');
+  };
+
   // ヒントの最大数を取得
   const maxRowHints = Math.max(...hints.rowHints.map((h) => h.length));
   const maxColHints = Math.max(...hints.colHints.map((h) => h.length));
@@ -179,6 +187,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
       {playState === 'gameover' && (
         <div className="text-2xl mt-4 text-red-500">ゲームオーバー！</div>
       )}
+      <button
+        className="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 mt-4"
+        onClick={resetGame}
+      >
+        ゲームリセット
+      </button>
     </div>
   );
 };
