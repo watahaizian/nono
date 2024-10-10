@@ -1,3 +1,3 @@
-### deploy 先
+### Deployment Platform
 
-This site was built using [Cloudflare Pages](https://watahaizian.com/)
+This site is built using [Cloudflare Pages](https://watahaizian.com/)
