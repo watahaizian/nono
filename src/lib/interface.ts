@@ -14,6 +14,7 @@ export interface GameScreenProps {
 
 export interface TitleScreenProps {
   onStart: () => void;
+  onEdit: () => void;
 }
 
 export interface hints {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TitleScreen from './components/TitleScreen';
 import GameScreen from './components/GameScreen';
+import EditScreen from './components/EditScreen';
 import { fetchPuzzles } from './lib/api';
 
 const App: React.FC = () => {
@@ -21,12 +22,18 @@ const App: React.FC = () => {
     }
   };
 
+  const startEdit = () => {
+    setCurrentScreen('edit');
+  };
+
   const renderScreen = () => {
     switch (currentScreen) {
       case 'title':
-        return <TitleScreen onStart={startGame} />;
+        return <TitleScreen onStart={startGame} onEdit={startEdit} />;
       case 'game':
         return <GameScreen puzzleId={puzzleId} puzzleSize={puzzleSize} />;
+      case 'edit':
+        return <EditScreen />;
     }
   };
 
