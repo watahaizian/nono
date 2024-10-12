@@ -13,10 +13,11 @@ const getCellStyle = (row: number, col: number) => ({
 const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
   const [cells, setCells] = useState<cellData[]>([]);
   const [hints, setHints] = useState<hints | null>(null);
-  const [currentCell, setCurrentCell] = useState<string[][]>(Array.from({ length: puzzleSize }, () => Array(puzzleSize).fill(null)));
-  const [playState, setPlayState] = useState<string>('playing');
+  const [currentCell, setCurrentCell] = useState<(string | null)[][]>(Array.from({ length: puzzleSize }, () => Array<string | null>(puzzleSize).fill(null)));
+  const [playState, setPlayState] = useState<'playing' | 'correct' | 'gameover'>('playing');
   const [life, setLife] = useState<number>(3);
-  const [playType, setPlayType] = useState<string>('paint');
+  const [playType, setPlayType] = useState<'paint' | 'erase'>('paint');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCellsData = async () => {
@@ -26,13 +27,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
         setHints(calculateHints(data, puzzleSize));
       } catch (error) {
         console.error(error);
-        alert('Failed to fetch cells');
+        setError('セルの取得に失敗しました');
       }
     };
     fetchCellsData();
   }, [puzzleId, puzzleSize]);
 
   useEffect(() => {
+    if (cells.length === 0) return;
     const answer = cells.every((cell) => {
       const row = cell.row_index;
       const col = cell.col_index;
@@ -114,6 +116,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
+      {error && <div className="text-red-500">{error}</div>}
       <h2 className="text-3xl font-bold mb-4">
         ゲームが始まりました！ パズルID: {puzzleId}, サイズ: {puzzleSize}
       </h2>
