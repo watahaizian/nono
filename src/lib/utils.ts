@@ -52,3 +52,10 @@ export const calculateHints = (data: cellData[], puzzleSize: number) => {
 
   return { rowHints, colHints };
 };
+
+export const getCellStyle = (row: number, col: number) => ({
+  borderTop: row === 0 ? '1px solid gray' : 'none',
+  borderLeft: col === 0 ? '1px solid gray' : 'none',
+  borderRight: '1px solid gray',
+  borderBottom: '1px solid gray',
+});

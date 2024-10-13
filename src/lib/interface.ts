@@ -21,3 +21,5 @@ export interface hints {
   rowHints: number[][];
   colHints: number[][];
 }
+
+export type puzzleSizes = 5 | 10 | 15 | 20 | 25;

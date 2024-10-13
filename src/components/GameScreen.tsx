@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchCells } from '../lib/api';
-import { calculateHints } from '../lib/utils';
+import { calculateHints, getCellStyle } from '../lib/utils';
 import { cellData, GameScreenProps, hints } from '../lib/interface';
-
-const getCellStyle = (row: number, col: number) => ({
-  borderTop: row === 0 ? '1px solid gray' : 'none',
-  borderLeft: col === 0 ? '1px solid gray' : 'none',
-  borderRight: '1px solid gray',
-  borderBottom: '1px solid gray',
-});
 
 const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
   const [cells, setCells] = useState<cellData[]>([]);
