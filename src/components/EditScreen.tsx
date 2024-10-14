@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { puzzleSizes } from '../lib/interface';
+import { puzzleSizes, createCellData } from '../lib/interface';
 import { getCellStyle } from '../lib/utils';
 
 const EditScreen = () => {
@@ -11,6 +11,7 @@ const EditScreen = () => {
       Array<string | null>(puzzleSize).fill(null)
     )
   );
+  const [title, setTitle] = useState<string>('');
 
   const selectPuzzleSize = (size: puzzleSizes) => {
     // サイズ選択時にcurrentCellがすべてnullでなければ、確認ダイアログを表示
@@ -25,6 +26,32 @@ const EditScreen = () => {
     setCurrentCell(
       Array.from({ length: size }, () => Array<string | null>(size).fill(null))
     );
+  };
+
+  const createPuzzle = () => {
+    // タイトルが入力されていない場合はアラートを表示
+    if (!title) {
+      alert('タイトルを入力してください');
+      return;
+    }
+    // currentCellがすべてnullの場合はアラートを表示
+    if (currentCell.every((row) => row.every((cell) => cell === null))) {
+      alert('何か描いてください');
+      return;
+    }
+    // createCellDataに合わせてパズルデータを作成
+    const puzzleData: createCellData[] = [];
+    currentCell.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        puzzleData.push({
+          row_index: rowIndex,
+          col_index: colIndex,
+          value: cell ? 1 : 0,
+          color: cell || '#FFFFFF',
+        });
+      });
+    });
+    console.log(puzzleData);
   };
 
   return (
@@ -81,12 +108,28 @@ const EditScreen = () => {
               }}
               onClick={() => {
                 const newCell = [...currentCell];
-                newCell[rowIndex][colIndex] = paintColor;
+                newCell[rowIndex][colIndex] =
+                  paintColor === '#ffffff' ? null : paintColor;
                 setCurrentCell(newCell);
               }}
             ></div>
           ))
         )}
+      </div>
+      <div>
+        <input
+          type="text"
+          className="mt-4 px-3 py-1 border border-gray-300 rounded-md"
+          placeholder="タイトル"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <button
+          className="ml-4 mt-4 px-3 py-1 border border-gray-300 rounded-md"
+          onClick={createPuzzle}
+        >
+          作成
+        </button>
       </div>
     </div>
   );

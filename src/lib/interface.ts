@@ -23,3 +23,10 @@ export interface hints {
 }
 
 export type puzzleSizes = 5 | 10 | 15 | 20 | 25;
+
+export interface createCellData {
+  row_index: number;
+  col_index: number;
+  value: number;
+  color: string;
+}
