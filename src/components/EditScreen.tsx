@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { puzzleSizes, createCellData } from '../lib/interface';
 import { getCellStyle } from '../lib/utils';
+import { EditScreenProps } from '../lib/interface';
 
-const EditScreen = () => {
+const EditScreen = ({ onBack }: EditScreenProps) => {
   const sizes = [5, 10, 15, 20, 25];
   const [puzzleSize, setPuzzleSize] = useState<puzzleSizes>(5);
   const [paintColor, setPaintColor] = useState<string>('#000000');
@@ -25,6 +26,21 @@ const EditScreen = () => {
     setPuzzleSize(size);
     setCurrentCell(
       Array.from({ length: size }, () => Array<string | null>(size).fill(null))
+    );
+  };
+
+  const resetAllCells = () => {
+    // currentCellが全てnullでない場合は確認ダイアログを表示
+    if (
+      currentCell.some((row) => row.some((cell) => cell !== null)) &&
+      !window.confirm('全てがリセットされます。よろしいですか？')
+    ) {
+      return;
+    }
+    setCurrentCell(
+      Array.from({ length: puzzleSize }, () =>
+        Array<string | null>(puzzleSize).fill(null)
+      )
     );
   };
 
@@ -51,7 +67,7 @@ const EditScreen = () => {
         });
       });
     });
-    console.log(puzzleData);
+    // パズルデータをfetchで送信
   };
 
   return (
@@ -77,17 +93,11 @@ const EditScreen = () => {
             type="color"
             value={paintColor}
             onChange={(e) => setPaintColor(e.target.value)}
-            className="ml-2"
+            className="ml-2 cursor-pointer"
           />
           <button
             className="ml-4 px-3 py-1 border border-gray-300 rounded-md"
-            onClick={() =>
-              setCurrentCell(
-                Array.from({ length: puzzleSize }, () =>
-                  Array<string | null>(puzzleSize).fill(null)
-                )
-              )
-            }
+            onClick={resetAllCells}
           >
             リセット
           </button>
@@ -131,6 +141,12 @@ const EditScreen = () => {
           作成
         </button>
       </div>
+      <button
+        onClick={onBack}
+        className="absolute bottom-4 left-4 px-3 py-1 border border-gray-300 rounded-md bg-gray-200 hover:bg-gray-300"
+      >
+        戻る
+      </button>
     </div>
   );
 };

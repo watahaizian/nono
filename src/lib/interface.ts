@@ -30,3 +30,7 @@ export interface createCellData {
   value: number;
   color: string;
 }
+
+export interface EditScreenProps {
+  onBack: () => void;
+}
