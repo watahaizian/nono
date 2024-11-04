@@ -1,4 +1,4 @@
-import { cellData } from './interface';
+import { cellData, createPuzzle } from './interface';
 
 export const fetchPuzzles = async () => {
   const response = await fetch(
@@ -11,7 +11,7 @@ export const fetchPuzzles = async () => {
   return data;
 };
 
-export const postPuzzle = async (puzzle: cellData[]) => {
+export const postPuzzle = async (puzzle: createPuzzle) => {
   const response = await fetch(
     'https://nono-api.watahaizian.workers.dev/puzzles',
     {

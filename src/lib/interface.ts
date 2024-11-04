@@ -31,6 +31,12 @@ export interface createCellData {
   color: string;
 }
 
+export interface createPuzzle {
+  name: string;
+  size: puzzleSizes;
+  cells: createCellData[];
+}
+
 export interface EditScreenProps {
   onBack: () => void;
 }
