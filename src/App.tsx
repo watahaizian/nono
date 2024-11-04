@@ -26,6 +26,11 @@ const App: React.FC = () => {
     setCurrentScreen('edit');
   };
 
+  // タイトルに戻る
+  const backToTitle = () => {
+    setCurrentScreen('title');
+  };
+
   const renderScreen = () => {
     switch (currentScreen) {
       case 'title':
@@ -33,7 +38,7 @@ const App: React.FC = () => {
       case 'game':
         return <GameScreen puzzleId={puzzleId} puzzleSize={puzzleSize} />;
       case 'edit':
-        return <EditScreen />;
+        return <EditScreen onBack={backToTitle} />;
     }
   };
 
