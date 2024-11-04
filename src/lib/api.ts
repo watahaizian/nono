@@ -11,9 +11,27 @@ export const fetchPuzzles = async () => {
   return data;
 };
 
+export const postPuzzle = async (puzzle: cellData[]) => {
+  const response = await fetch(
+    'https://nono-api.watahaizian.workers.dev/puzzles',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(puzzle),
+    }
+  );
+  if (!response.ok) {
+    throw new Error('Failed to post puzzle');
+  }
+  const data = await response.json();
+  return data;
+}
+
 export const fetchCells = async (puzzleId: number): Promise<cellData[]> => {
   const response = await fetch(
-    `https://nono-api.watahaizian.workers.dev/cells/${puzzleId}`
+    `https://nono-api.watahaizian.workers.dev/puzzles/${puzzleId}/cells`
   );
   if (!response.ok) {
     throw new Error('Failed to fetch cells');
