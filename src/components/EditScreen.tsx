@@ -9,6 +9,7 @@ const EditScreen = ({ onBack }: EditScreenProps) => {
   const [paintColor, setPaintColor] = useState<string>('#000000');
   const [currentCell, setCurrentCell] = useState<(string | null)[][]>(Array.from({ length: puzzleSize }, () => Array<string | null>(puzzleSize).fill(null)));
   const [title, setTitle] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const selectPuzzleSize = (size: puzzleSizes) => {
     // サイズ選択時にcurrentCellがすべてnullでなければ、確認ダイアログを表示
@@ -29,7 +30,7 @@ const EditScreen = ({ onBack }: EditScreenProps) => {
     setCurrentCell(Array.from({ length: puzzleSize }, () => Array<string | null>(puzzleSize).fill(null)));
   };
 
-  const createPuzzle = () => {
+  const createPuzzleHandler = async () => {
     // タイトルが入力されていない場合はアラートを表示
     if (!title) {
       alert('タイトルを入力してください');
@@ -58,10 +59,18 @@ const EditScreen = ({ onBack }: EditScreenProps) => {
       size: puzzleSize,
       cells: puzzleData,
     };
-    postPuzzle(puzzle).then(() => {
+
+    setIsLoading(true); // ローディング開始
+    try {
+      await postPuzzle(puzzle);
       alert('パズルを作成しました');
       onBack();
-    });
+    } catch (error) {
+      console.error('パズル作成エラー:', error);
+      alert('パズルの作成に失敗しました。再度お試しください。');
+    } finally {
+      setIsLoading(false); // ローディング終了
+    }
   };
 
   return (
@@ -89,13 +98,17 @@ const EditScreen = ({ onBack }: EditScreenProps) => {
       </div>
       <div
         className="grid gap-0 mt-4"
-        style={{ gridTemplateColumns: `repeat(${puzzleSize}, 2rem)` }} // 固定幅に変更
+        style={{
+          gridTemplateColumns: `repeat(${puzzleSize}, 1fr)`, // `fr` 単位を使用
+          height: `min(70vh, 100vw)`,
+          width: `min(70vh, 100vw)`,
+        }}
       >
         {currentCell.map((row, rowIndex) =>
           row.map((cell, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
-              className="w-8 h-8 flex items-center justify-center cursor-pointer border border-gray-300" // ボーダーを追加
+              className="flex items-center justify-center cursor-pointer border border-gray-300"
               style={{
                 ...getCellStyle(rowIndex, colIndex),
                 backgroundColor: cell || '#FFFFFF',
@@ -117,8 +130,14 @@ const EditScreen = ({ onBack }: EditScreenProps) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
-        <button className="ml-4 mt-4 px-3 py-1 border border-gray-300 rounded-md" onClick={createPuzzle}>
-          作成
+        <button
+          className={`ml-4 mt-4 px-3 py-1 border border-gray-300 rounded-md flex items-center justify-center ${
+            isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-200'
+          }`}
+          onClick={createPuzzleHandler}
+          disabled={isLoading} // ローディング中はボタンを無効化
+        >
+          {isLoading ? '処理中...' : '作成'}
         </button>
       </div>
       <button onClick={onBack} className="absolute bottom-4 left-4 px-3 py-1 border border-gray-300 rounded-md bg-gray-200 hover:bg-gray-300">

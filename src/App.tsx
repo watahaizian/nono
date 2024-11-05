@@ -36,7 +36,7 @@ const App: React.FC = () => {
       case 'title':
         return <TitleScreen onStart={startGame} onEdit={startEdit} />;
       case 'game':
-        return <GameScreen puzzleId={puzzleId} puzzleSize={puzzleSize} />;
+        return <GameScreen puzzleId={puzzleId} puzzleSize={puzzleSize} onBack={backToTitle} />;
       case 'edit':
         return <EditScreen onBack={backToTitle} />;
     }

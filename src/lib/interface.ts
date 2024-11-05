@@ -10,6 +10,7 @@ export interface cellData {
 export interface GameScreenProps {
   puzzleId: number;
   puzzleSize: number;
+  onBack: () => void;
 }
 
 export interface TitleScreenProps {
