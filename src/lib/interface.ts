@@ -10,13 +10,34 @@ export interface cellData {
 export interface GameScreenProps {
   puzzleId: number;
   puzzleSize: number;
+  onBack: () => void;
 }
 
 export interface TitleScreenProps {
   onStart: () => void;
+  onEdit: () => void;
 }
 
 export interface hints {
   rowHints: number[][];
   colHints: number[][];
+}
+
+export type puzzleSizes = 5 | 10 | 15 | 20 | 25;
+
+export interface createCellData {
+  row_index: number;
+  col_index: number;
+  value: number;
+  color: string;
+}
+
+export interface createPuzzle {
+  name: string;
+  size: puzzleSizes;
+  cells: createCellData[];
+}
+
+export interface EditScreenProps {
+  onBack: () => void;
 }

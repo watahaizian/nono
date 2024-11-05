@@ -1,16 +1,9 @@
 import { useState, useEffect } from 'react';
 import { fetchCells } from '../lib/api';
-import { calculateHints } from '../lib/utils';
+import { calculateHints, getCellStyle } from '../lib/utils';
 import { cellData, GameScreenProps, hints } from '../lib/interface';
 
-const getCellStyle = (row: number, col: number) => ({
-  borderTop: row === 0 ? '1px solid gray' : 'none',
-  borderLeft: col === 0 ? '1px solid gray' : 'none',
-  borderRight: '1px solid gray',
-  borderBottom: '1px solid gray',
-});
-
-const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
+const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize, onBack }) => {
   const [cells, setCells] = useState<cellData[]>([]);
   const [hints, setHints] = useState<hints | null>(null);
   const [currentCell, setCurrentCell] = useState<(string | null)[][]>(Array.from({ length: puzzleSize }, () => Array<string | null>(puzzleSize).fill(null)));
@@ -115,7 +108,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
   const maxColHints = Math.max(...hints.colHints.map((h) => h.length));
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-100 overflow-auto">
       {error && <div className="text-red-500">{error}</div>}
       <h2 className="text-3xl font-bold mb-4">
         ゲームが始まりました！ パズルID: {puzzleId}, サイズ: {puzzleSize}
@@ -126,6 +119,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
         style={{
           gridTemplateColumns: `repeat(${maxRowHints + puzzleSize}, 1fr)`,
           gridTemplateRows: `repeat(${maxColHints + puzzleSize}, 1fr)`,
+          height: 'min(70vh, 100vw)',
+          width: 'min(70vh, 100vw)',
         }}
       >
         {/* グリッドを構築 */}
@@ -135,7 +130,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
 
             // 左上の空白セル
             if (gridRow < maxColHints && gridCol < maxRowHints) {
-              return <div key={key} className="w-8 h-8"></div>;
+              return <div key={key}></div>;
             }
 
             // 列ヒント（上部）
@@ -144,7 +139,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
               const hintIndex = hints.colHints[colIndex].length - (maxColHints - gridRow);
               const hint = hints.colHints[colIndex][hintIndex] || '';
               return (
-                <div key={key} className="w-8 h-8 flex items-center justify-center">
+                <div key={key} className="flex items-center justify-center text-sm">
                   {hint}
                 </div>
               );
@@ -156,7 +151,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
               const hintIndex = hints.rowHints[rowIndex].length - (maxRowHints - gridCol);
               const hint = hints.rowHints[rowIndex][hintIndex] || '';
               return (
-                <div key={key} className="w-8 h-8 flex items-center justify-center">
+                <div key={key} className="flex items-center justify-center text-sm">
                   {hint}
                 </div>
               );
@@ -169,10 +164,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
               return (
                 <div
                   key={key}
-                  className="w-8 h-8 flex items-center justify-center cursor-pointer"
+                  className="flex items-center justify-center cursor-pointer border border-gray-300"
                   style={{
                     ...getCellStyle(rowIndex, colIndex),
                     backgroundColor: currentCell[rowIndex][colIndex] === null ? 'white' : currentCell[rowIndex][colIndex],
+                    minWidth: '20px',
+                    minHeight: '20px',
                   }}
                   onClick={() => cellLeftClick(rowIndex, colIndex)}
                 >
@@ -182,7 +179,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
             }
 
             // その他の場合（念のため）
-            return <div key={key} className="w-8 h-8"></div>;
+            return <div key={key} className="flex items-center justify-center border border-gray-200"></div>;
           })
         )}
       </div>
@@ -212,6 +209,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize }) => {
         onClick={resetGame}
       >
         ゲームリセット
+      </button>
+      <button onClick={onBack} className="absolute bottom-4 left-4 px-3 py-1 border border-gray-300 rounded-md bg-gray-200 hover:bg-gray-300">
+        戻る
       </button>
     </div>
   );
