@@ -8,7 +8,11 @@ const GameScreen: React.FC<GameScreenProps> = ({
   puzzleSize,
   onBack,
 }) => {
-  const [cells, setCells] = useState<cellData[]>([]);
+  const [cells, setCells] = useState<(string | null)[][]>(
+    Array.from({ length: puzzleSize }, () =>
+      Array<string | null>(puzzleSize).fill(null)
+    )
+  );
   const [hints, setHints] = useState<hints | null>(null);
   const [currentCell, setCurrentCell] = useState<(string | null)[][]>(
     Array.from({ length: puzzleSize }, () =>
@@ -27,7 +31,10 @@ const GameScreen: React.FC<GameScreenProps> = ({
     const fetchCellsData = async () => {
       try {
         const data: cellData[] = await fetchCells(puzzleId);
-        setCells(data);
+        const shapeData = Array.from({ length: puzzleSize }, () =>
+          Array<string | null>(puzzleSize).fill(null)
+        );
+        setCells(shapeData);
         setHints(calculateHints(data, puzzleSize));
       } catch (error) {
         console.error(error);
@@ -144,91 +151,90 @@ const GameScreen: React.FC<GameScreenProps> = ({
         ゲームが始まりました！ パズルID: {puzzleId}, サイズ: {puzzleSize}
       </h2>
       <div className="text-xl mb-4">残機: {life}</div>
-      <div
+      {/* <div
         className="grid gap-0"
         style={{
-          gridTemplateColumns: `repeat(${maxRowHints + puzzleSize}, 1fr)`,
-          gridTemplateRows: `repeat(${maxColHints + puzzleSize}, 1fr)`,
+          gridTemplateColumns: `repeat(${puzzleSize}, 1fr)`,
+          gridTemplateRows: `repeat(${puzzleSize}, 1fr)`,
           height: 'min(70vh, 100vw)',
           width: 'min(70vh, 100vw)',
         }}
       >
-        {/* グリッドを構築 */}
-        {Array.from({ length: maxColHints + puzzleSize }).map((_, gridRow) =>
-          Array.from({ length: maxRowHints + puzzleSize }).map((_, gridCol) => {
+        {Array.from({ length: puzzleSize }).map((_, gridRow) =>
+          Array.from({ length: puzzleSize }).map((_, gridCol) => {
             const key = `${gridRow}-${gridCol}`;
 
             // 左上の空白セル
-            if (gridRow < maxColHints && gridCol < maxRowHints) {
-              return <div key={key}></div>;
-            }
+            // if (gridRow < maxColHints && gridCol < maxRowHints) {
+            //   return <div key={key}></div>;
+            // }
 
             // 列ヒント（上部）
-            if (gridRow < maxColHints && gridCol >= maxRowHints) {
-              const colIndex = gridCol - maxRowHints;
-              const hintIndex =
-                hints.colHints[colIndex].length - (maxColHints - gridRow);
-              const hint = hints.colHints[colIndex][hintIndex] || '';
-              return (
-                <div
-                  key={key}
-                  className="flex items-center justify-center text-sm"
-                >
-                  {hint}
-                </div>
-              );
-            }
+            // if (gridRow < maxColHints && gridCol >= maxRowHints) {
+            //   const colIndex = gridCol - maxRowHints;
+            //   const hintIndex =
+            //     hints.colHints[colIndex].length - (maxColHints - gridRow);
+            //   const hint = hints.colHints[colIndex][hintIndex] || '';
+            //   return (
+            //     <div
+            //       key={key}
+            //       className="flex items-center justify-center text-sm"
+            //     >
+            //       {hint}
+            //     </div>
+            //   );
+            // }
 
             // 行ヒント（左側）
-            if (gridRow >= maxColHints && gridCol < maxRowHints) {
-              const rowIndex = gridRow - maxColHints;
-              const hintIndex =
-                hints.rowHints[rowIndex].length - (maxRowHints - gridCol);
-              const hint = hints.rowHints[rowIndex][hintIndex] || '';
-              return (
-                <div
-                  key={key}
-                  className="flex items-center justify-center text-sm"
-                >
-                  {hint}
-                </div>
-              );
-            }
+            // if (gridRow >= maxColHints && gridCol < maxRowHints) {
+            //   const rowIndex = gridRow - maxColHints;
+            //   const hintIndex =
+            //     hints.rowHints[rowIndex].length - (maxRowHints - gridCol);
+            //   const hint = hints.rowHints[rowIndex][hintIndex] || '';
+            //   return (
+            //     <div
+            //       key={key}
+            //       className="flex items-center justify-center text-sm"
+            //     >
+            //       {hint}
+            //     </div>
+            //   );
+            // }
 
             // パズルのセル
-            if (gridRow >= maxColHints && gridCol >= maxRowHints) {
-              const rowIndex = gridRow - maxColHints;
-              const colIndex = gridCol - maxRowHints;
-              return (
-                <div
-                  key={key}
-                  className="flex items-center justify-center cursor-pointer border border-gray-300"
-                  style={{
-                    ...getCellStyle(rowIndex, colIndex),
-                    backgroundColor:
-                      currentCell[rowIndex][colIndex] === null
-                        ? 'white'
-                        : currentCell[rowIndex][colIndex],
-                    minWidth: '20px',
-                    minHeight: '20px',
-                  }}
-                  onClick={() => cellLeftClick(rowIndex, colIndex)}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setIsMouseDown(true);
+            // if (gridRow >= maxColHints && gridCol >= maxRowHints) {
+            const rowIndex = gridRow;
+            const colIndex = gridCol;
+            return (
+              <div
+                key={key}
+                className="flex items-center justify-center cursor-pointer border border-gray-300"
+                style={{
+                  ...getCellStyle(rowIndex, colIndex),
+                  backgroundColor:
+                    currentCell[rowIndex][colIndex] === null
+                      ? 'white'
+                      : currentCell[rowIndex][colIndex],
+                  minWidth: '20px',
+                  minHeight: '20px',
+                }}
+                onClick={() => cellLeftClick(rowIndex, colIndex)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setIsMouseDown(true);
+                  cellLeftClick(rowIndex, colIndex);
+                }}
+                onMouseEnter={() => {
+                  if (isMouseDown) {
                     cellLeftClick(rowIndex, colIndex);
-                  }}
-                  onMouseEnter={() => {
-                    if (isMouseDown) {
-                      cellLeftClick(rowIndex, colIndex);
-                    }
-                  }}
-                  onMouseUp={() => setIsMouseDown(false)}
-                >
-                  {currentCell[rowIndex][colIndex] === 'wrong' ? 'x' : ''}
-                </div>
-              );
-            }
+                  }
+                }}
+                onMouseUp={() => setIsMouseDown(false)}
+              >
+                {currentCell[rowIndex][colIndex] === 'wrong' ? 'x' : ''}
+              </div>
+            );
+            // }
 
             // その他の場合（念のため）
             return (
@@ -239,6 +245,16 @@ const GameScreen: React.FC<GameScreenProps> = ({
             );
           })
         )}
+      </div> */}
+      <div
+        className="grid gap-0"
+        style={{
+          gridTemplateColumns: `repeat(${puzzleSize}, 1fr)`,
+          height: 'min(70vh, 100vw)',
+          width: 'min(70vh, 100vw)',
+        }}
+      >
+        {}
       </div>
       {/* ボタンの配置 */}
       <div className="flex space-x-4 mt-4">
