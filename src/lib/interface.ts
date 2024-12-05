@@ -18,7 +18,7 @@ export interface TitleScreenProps {
   onEdit: () => void;
 }
 
-export interface hints {
+export interface hintss {
   rowHints: number[][];
   colHints: number[][];
 }
