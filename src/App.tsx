@@ -13,8 +13,8 @@ const App: React.FC = () => {
     try {
       const puzzles = await fetchPuzzles();
       const randomPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
-      setPuzzleId(randomPuzzle.id);
-      setPuzzleSize(randomPuzzle.size);
+      setPuzzleId(randomPuzzle.puzzle_id);
+      setPuzzleSize(randomPuzzle.puzzle_size);
       setCurrentScreen('game');
     } catch (error) {
       console.error(error);

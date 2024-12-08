@@ -32,7 +32,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize, onBack })
     const answer = cells.every((cell) => {
       const row = cell.row_index;
       const col = cell.col_index;
-      if (cell.value === 1) {
+      if (cell.cell_value === 1) {
         return currentCell[row][col] === cell.color;
       } else {
         return currentCell[row][col] === null || currentCell[row][col] === 'wrong';
@@ -71,7 +71,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize, onBack })
     }
     if (currentCell[row][col] !== null) return;
     if (playType === 'paint') {
-      if (cell.value === 1) {
+      if (cell.cell_value === 1) {
         setCurrentCell((prev) => {
           const newCell = prev.map((rowArr) => [...rowArr]); // 深いコピー
           const cellData = cells.find((c) => c.row_index === row && c.col_index === col);
@@ -89,7 +89,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ puzzleId, puzzleSize, onBack })
         setLife((prev) => prev - 1);
       }
     } else if (playType === 'erase') {
-      if (cell.value === 0) {
+      if (cell.cell_value === 0) {
         setCurrentCell((prev) => {
           const newCell = prev.map((rowArr) => [...rowArr]); // 深いコピー
           newCell[row][col] = 'wrong';

@@ -1,9 +1,9 @@
 export interface cellData {
-  id: number;
+  cell_id: number;
   puzzle_id: number;
   row_index: number;
   col_index: number;
-  value: number;
+  cell_value: number;
   color: string;
 }
 
@@ -28,7 +28,7 @@ export type puzzleSizes = 5 | 10 | 15 | 20 | 25;
 export interface createCellData {
   row_index: number;
   col_index: number;
-  value: number;
+  cell_value: number;
   color: string;
 }
 
