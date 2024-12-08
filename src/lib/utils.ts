@@ -1,4 +1,10 @@
-import { cellData } from './interface';
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+import { cellData } from './interface'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 export const calculateHints = (data: cellData[], puzzleSize: number) => {
   const grid = Array.from({ length: puzzleSize }, () =>
@@ -8,7 +14,7 @@ export const calculateHints = (data: cellData[], puzzleSize: number) => {
   data.forEach((cell) => {
     const row = cell.row_index;
     const col = cell.col_index;
-    grid[row][col] = cell.value;
+    grid[row][col] = cell.cell_value;
   });
 
   const rowHints = grid.map((row) => {
