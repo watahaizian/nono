@@ -1,8 +1,8 @@
-import { cellData, createPuzzle } from './interface';
+import type { cellData, createPuzzle } from './interface';
 
 export const fetchPuzzles = async () => {
   const response = await fetch(
-    'https://nono-api.watahaizian.workers.dev/puzzles'
+    `${import.meta.env.VITE_BACKEND_URL}/puzzles`
   );
   if (!response.ok) {
     throw new Error('Failed to fetch puzzles');
@@ -13,7 +13,7 @@ export const fetchPuzzles = async () => {
 
 export const postPuzzle = async (puzzle: createPuzzle) => {
   const response = await fetch(
-    'https://nono-api.watahaizian.workers.dev/puzzles',
+    `${import.meta.env.VITE_BACKEND_URL}/puzzles`,
     {
       method: 'POST',
       headers: {
@@ -31,7 +31,7 @@ export const postPuzzle = async (puzzle: createPuzzle) => {
 
 export const fetchCells = async (puzzleId: number): Promise<cellData[]> => {
   const response = await fetch(
-    `https://nono-api.watahaizian.workers.dev/puzzles/${puzzleId}/cells`
+    `${import.meta.env.VITE_BACKEND_URL}/puzzles/${puzzleId}/cells`
   );
   if (!response.ok) {
     throw new Error('Failed to fetch cells');
