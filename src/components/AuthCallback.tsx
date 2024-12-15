@@ -11,7 +11,6 @@ const AuthCallback = () => {
 			.then((data) => {
 				if (data) {
 					if (window.opener) {
-						console.log("Sending auth-success message");
 						window.opener.postMessage(
 							"auth-success",
 							import.meta.env.VITE_FRONTEND_URL || window.location.origin,

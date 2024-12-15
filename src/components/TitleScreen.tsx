@@ -31,7 +31,7 @@ const TitleScreen: React.FC<TitleScreenProps> = ({ onStart, onEdit }) => {
 				credentials: "include",
 			});
 			const data = await res.json();
-			if (data.message === "no session_id") {
+			if (data.message === "no session_id" || data.message === "no user") {
 				setUserInfo("login");
 			} else {
 				setUserInfo(data);
