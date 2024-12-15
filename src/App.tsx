@@ -1,10 +1,10 @@
 import type React from "react";
 import { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import TitleScreen from "./components/TitleScreen";
-import GameScreen from "./components/GameScreen";
-import EditScreen from "./components/EditScreen";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import AuthCallback from "./components/AuthCallback";
+import EditScreen from "./components/EditScreen";
+import GameScreen from "./components/GameScreen";
+import TitleScreen from "./components/TitleScreen";
 import { fetchPuzzles } from "./lib/api";
 
 const App: React.FC = () => {
@@ -15,6 +15,7 @@ const App: React.FC = () => {
 	const startGame = async () => {
 		try {
 			const puzzles = await fetchPuzzles();
+			console.log(puzzles);
 			const randomPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
 			setPuzzleId(randomPuzzle.puzzle_id);
 			setPuzzleSize(randomPuzzle.puzzle_size);
